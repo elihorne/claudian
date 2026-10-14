@@ -1,4 +1,6 @@
+import type { ClaudianChatHandle } from '@/features/chat/api/types';
 import type { ChatFeatureHost } from '@/features/chat/ChatFeatureHost';
+import type { InputController } from '@/features/chat/input/InputController';
 import type { ChatState } from '@/features/chat/state/ChatState';
 import type { TabComposerPort, TabLinkedContentPort, TabPlacementPort, TabTranscriptPlacement } from '@/features/chat/tabs/ChatTab';
 import type { TabRuntimeControllerBundle } from '@/features/chat/tabs/runtime/TabRuntimeConstruction';
@@ -11,6 +13,7 @@ export interface TabRuntimePorts {
   readonly linkedContent: TabLinkedContentPort;
   readonly placement: TabPlacementPort;
   readonly zenPresentation: ZenPresentationPort;
+  readonly chatHandle: ClaudianChatHandle;
   refreshProviderControls(): void;
   refreshMessageTimestamps(): void;
 }
@@ -24,9 +27,11 @@ export function buildTabRuntimePorts(
   getRuntime: () => AssembledTabRuntime,
 ): TabRuntimePorts {
   const { controllers, renderer } = controllerBundle;
+  const composer = createTabComposerPort(dom.inputEl, ui);
   return {
     zenPresentation: createTabZenPresentation(() => getRuntime().state, dom.messagesEl),
-    composer: createTabComposerPort(dom.inputEl, ui),
+    composer,
+    chatHandle: createTabChatHandle(getRuntime, composer, controllers.inputController),
     linkedContent: ui.linkedContentController,
     placement: createTabPlacementPort(
       dom,
@@ -126,6 +131,32 @@ export function createTabPlacementPort(
     },
     setSideChatChipHost,
     setSideChatFullHeightHost,
+  };
+}
+
+/**
+ * The companion-plugin surface over one tab: composer insert, the user's send and Stop,
+ * and the activity reads Zen mode already mirrors. Reads resolve through the live runtime
+ * so a handle never retains state past the tab that issued it.
+ */
+export function createTabChatHandle(
+  getRuntime: () => Pick<AssembledTabRuntime, 'id' | 'conversationId' | 'providerId' | 'state'>,
+  composer: Pick<TabComposerPort, 'appendText'>,
+  input: Pick<InputController, 'sendMessage' | 'cancelStreaming'>,
+): ClaudianChatHandle {
+  return {
+    get tabId() { return getRuntime().id; },
+    get conversationId() { return getRuntime().conversationId; },
+    get providerId() { return getRuntime().providerId; },
+    appendText: text => composer.appendText(text),
+    submit: content => input.sendMessage(
+      content === undefined ? { destination: 'main' } : { destination: 'main', content },
+    ),
+    stop: () => input.cancelStreaming(),
+    get isStreaming() { return getRuntime().state.isStreaming; },
+    get activity() { return getRuntime().state.activity; },
+    get messages() { return getRuntime().state.messages; },
+    subscribe: listener => getRuntime().state.subscribeActivity(listener),
   };
 }
 

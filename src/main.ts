@@ -21,6 +21,7 @@ import type { SharedStorageService } from './app/storage/SharedStorageService';
 import { AgentSkillResources } from './composition/AgentSkillResources';
 import { ClaudianChatFeatureHost, ClaudianFeatureHost } from './composition/ClaudianFeatureHosts';
 import { ClaudianProviderHost } from './composition/ClaudianProviderHost';
+import { createClaudianPublicAPI } from './composition/ClaudianPublicAPI';
 import { ClaudianViews } from './composition/ClaudianViews';
 import { ProviderExecutionLifecycleRegistry } from './core/execution';
 import { resolveLoginShellPath } from './core/process/loginShellPath';
@@ -31,6 +32,7 @@ import type { ProviderId } from './core/providers/types';
 import { LoopbackSessionToolServer } from './core/session-tools/LoopbackSessionToolServer';
 import type { ClaudianSettings } from './core/types';
 import { VIEW_TYPE_CLAUDIAN } from './core/types';
+import type { ClaudianAPI } from './features/chat/api/types';
 import { ClaudianView } from './features/chat/ClaudianView';
 import { ConversationLifecycle } from './features/chat/conversation/ConversationLifecycle';
 import { InactiveSessionArchiver } from './features/chat/conversation/InactiveSessionArchiver';
@@ -81,6 +83,11 @@ export default class ClaudianPlugin extends Plugin {
       // A failed write restores the committed position; the panel stays where it was dropped.
       void this.settingsCoordinator.mutate((draft) => { draft.zenModePosition = position; }).catch(() => undefined);
     },
+  });
+  /** Surface for companion plugins, reachable as `app.plugins.plugins.realclaudian.api`. */
+  readonly api: ClaudianAPI = createClaudianPublicAPI({
+    getInputFocusView: zenLeaf => this.views.getInputFocusView(zenLeaf),
+    getZenLeaf: () => this.zenMode.getActiveLeaf(),
   });
   private readonly chatViews = new ChatViewPublisher({
     views: this.views,

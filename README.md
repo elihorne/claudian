@@ -39,6 +39,8 @@ Open Claudian interface from the ribbon icon or command palette. Everything work
 
 **Collaboration** — Collab is now a standalone plugin. See [Claudian Collab](https://github.com/YishenTu/claudian-collab).
 
+**Companion plugin API** — Other Obsidian plugins can drive the active chat through `app.plugins.plugins.realclaudian.api`: append text to the composer, submit, stop, and subscribe to the streamed reply. The surface is defined in [`src/features/chat/api/types.ts`](src/features/chat/api/types.ts) and versioned by `api.version`.
+
 ## Requirements
 
 - At least one of the following harnesses:

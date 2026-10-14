@@ -2,6 +2,7 @@ import type { Component, TFile, WorkspaceLeaf } from 'obsidian';
 
 import type { ProviderId, TitleGenerationService } from '@/core/providers/types';
 import type { ChatMessage } from '@/core/types';
+import type { ClaudianChatHandle } from '@/features/chat/api/types';
 import type { TabAttention } from '@/features/chat/state/types';
 import type { TabIdentity } from '@/features/chat/tabs/TabIdentity';
 import type { ZenPresentationPort } from '@/features/chat/zen/types';
@@ -134,6 +135,8 @@ export interface ChatTab {
   readonly linkedContent: TabLinkedContentPort;
   readonly placement: TabPlacementPort;
   readonly zenPresentation: ZenPresentationPort;
+  /** The public chat API surface over this tab, published through the plugin instance. */
+  readonly chatHandle: ClaudianChatHandle;
   /** Re-renders model, mode, effort, permission, service-tier, and context-usage controls. */
   refreshProviderControls(): void;
   refreshMessageTimestamps(): void;
